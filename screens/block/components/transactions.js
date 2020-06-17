@@ -11,17 +11,17 @@ import {getBlockTransactions} from '../../../shared/api'
 const LIMIT = 10
 
 export default function Transactions({block}) {
-  const fetchTransactions = (_, block, skip = 0) =>
-    getBlockTransactions(block, skip, LIMIT)
+  const fetchTransactions = (_, block, continuationToken = null) =>
+    getBlockTransactions(block, LIMIT, continuationToken)
 
   const {data, fetchMore, canFetchMore} = useInfiniteQuery(
     block && `${block}/transactions`,
     [block],
     fetchTransactions,
     {
-      getFetchMore: (lastGroup, allGroups) =>
-        lastGroup && lastGroup.length === LIMIT
-          ? allGroups.length * LIMIT
+      getFetchMore: (lastGroup) =>
+        lastGroup && lastGroup.continuationToken
+          ? lastGroup.continuationToken
           : false,
     }
   )
@@ -109,10 +109,11 @@ export default function Transactions({block}) {
                   <td>
                     {dnaFmt(
                       precise6(
-                        !(item.amount * 1) &&
-                          typeof item.transfer !== 'undefined'
-                          ? item.transfer
-                          : item.amount
+                        item.amount * 1 +
+                          (item.data &&
+                          typeof item.data.transfer !== 'undefined'
+                            ? item.data.transfer * 1
+                            : 0)
                       ),
                       ''
                     )}

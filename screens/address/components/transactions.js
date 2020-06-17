@@ -12,17 +12,17 @@ import {SkeletonRows} from '../../../shared/components/skeleton'
 const LIMIT = 30
 
 export default function Transactions({address, visible}) {
-  const fetchTransactions = (_, address, skip = 0) =>
-    getTransactions(address, skip, LIMIT)
+  const fetchTransactions = (_, address, continuationToken = null) =>
+    getTransactions(address, LIMIT, continuationToken)
 
   const {data, fetchMore, canFetchMore, status} = useInfiniteQuery(
     address && visible && `${address}/transactions`,
     [address],
     fetchTransactions,
     {
-      getFetchMore: (lastGroup, allGroups) =>
-        lastGroup && lastGroup.length === LIMIT
-          ? allGroups.length * LIMIT
+      getFetchMore: (lastGroup) =>
+        lastGroup && lastGroup.continuationToken
+          ? lastGroup.continuationToken
           : false,
     }
   )
@@ -125,10 +125,11 @@ export default function Transactions({address, visible}) {
                   <td>
                     {dnaFmt(
                       precise6(
-                        !(item.amount * 1) &&
-                          typeof item.transfer !== 'undefined'
-                          ? item.transfer
-                          : item.amount
+                        item.amount * 1 +
+                          (item.data &&
+                          typeof item.data.transfer !== 'undefined'
+                            ? item.data.transfer * 1
+                            : 0)
                       ),
                       ''
                     )}

@@ -10,16 +10,17 @@ import {SkeletonRows} from '../../../shared/components/skeleton'
 const LIMIT = 30
 
 export default function Blocks({epoch, visible}) {
-  const fetchBlocks = (_, epoch, skip = 0) => getEpochBlocks(epoch, skip, LIMIT)
+  const fetchBlocks = (_, epoch, continuationToken = null) =>
+    getEpochBlocks(epoch, LIMIT, continuationToken)
 
   const {data, fetchMore, canFetchMore, status} = useInfiniteQuery(
     epoch > 0 && visible && `${epoch}/blocks`,
     [epoch],
     fetchBlocks,
     {
-      getFetchMore: (lastGroup, allGroups) =>
-        lastGroup && lastGroup.length === LIMIT
-          ? allGroups.length * LIMIT
+      getFetchMore: (lastGroup) =>
+        lastGroup && lastGroup.continuationToken
+          ? lastGroup.continuationToken
           : false,
     }
   )
